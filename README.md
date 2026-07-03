@@ -126,6 +126,12 @@ curl "http://localhost:3000/landscape?w=800&format=png" -o random.png
 curl "http://localhost:3000/abstract?w=1920&h=1080&fit=cover&format=webp" -o wallpaper.webp
 ```
 
+### List: list folders and images
+
+```bash
+curl "http://localhost:3000/list"
+```
+
 ---
 
 ## Environment Variables
