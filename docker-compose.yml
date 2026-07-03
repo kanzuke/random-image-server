@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  wallpaper-server:
+    build: .
+    container_name: random-wallpaper-server
+    ports:
+      - "8080:3000"
+    volumes:
+      - ./images:/app/images:ro
+    environment:
+      - PORT=3000
+      - IMAGES_ROOT=/app/images
+      - CACHE_TTL_MS=60000
+    restart: unless-stopped
