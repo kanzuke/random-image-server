@@ -172,6 +172,17 @@ function renderTree(node) {
   return html;
 }
 
+
+/*##################################################
+                   ROUTERS
+##################################################*/                   
+
+// GET /health
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 // GET /list ou /list?folder=landscape
 app.get("/list", (req, res) => {
   const subfolder = req.query.folder || "";

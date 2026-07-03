@@ -132,6 +132,12 @@ curl "http://localhost:3000/abstract?w=1920&h=1080&fit=cover&format=webp" -o wal
 curl "http://localhost:3000/list"
 ```
 
+### Health: heathcheck
+
+```bash
+curl "http://localhost:3000/health"
+```
+
 ---
 
 ## Environment Variables
