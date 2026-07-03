@@ -119,6 +119,128 @@ async function serveRandomImage(req, res, subfolder) {
   }
 }
 
+// Fonction récursive pour parcourir l'arborescence
+function walkDirectory(dir, baseDir = dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const relativePath = path.relative(baseDir, dir);
+
+  const images = entries
+    .filter((e) => e.isFile() && IMAGE_EXTENSIONS.includes(path.extname(e.name).toLowerCase().slice(1)))
+    .map((e) => e.name)
+    .sort();
+
+  const subfolders = entries
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort();
+
+  const node = {
+    path: relativePath || "/",
+    images,
+    imageCount: images.length,
+    children: [],
+  };
+
+  for (const sub of subfolders) {
+    node.children.push(walkDirectory(path.join(dir, sub), baseDir));
+  }
+
+  return node;
+}
+
+// Génère le HTML récursivement sous forme de listes imbriquées
+function renderTree(node) {
+  let html = `<li><strong>${node.path}</strong> <span class="count">(${node.imageCount} image${node.imageCount !== 1 ? "s" : ""})</span>`;
+
+  if (node.images.length > 0) {
+    html += `<ul class="images">`;
+    for (const img of node.images) {
+      html += `<li>${img}</li>`;
+    }
+    html += `</ul>`;
+  }
+
+  if (node.children.length > 0) {
+    html += `<ul class="folders">`;
+    for (const child of node.children) {
+      html += renderTree(child);
+    }
+    html += `</ul>`;
+  }
+
+  html += `</li>`;
+  return html;
+}
+
+// GET /list ou /list?folder=landscape
+app.get("/list", (req, res) => {
+  const subfolder = req.query.folder || "";
+  const targetDir = path.resolve(IMAGES_ROOT, subfolder);
+
+  if (!targetDir.startsWith(IMAGES_ROOT)) {
+    return res.status(400).send("Invalid path");
+  }
+
+  if (!fs.existsSync(targetDir)) {
+    return res.status(404).send(`Folder '${subfolder}' not found`);
+  }
+
+  const tree = walkDirectory(targetDir);
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wallpaper Library</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #222;
+      background: #fafafa;
+    }
+    h1 {
+      font-size: 1.4rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+    }
+    ul {
+      list-style: none;
+      padding-left: 1.2rem;
+    }
+    ul.folders > li {
+      margin-top: 6px;
+    }
+    ul.images li {
+      color: #555;
+      font-size: 0.9rem;
+    }
+    .count {
+      color: #888;
+      font-weight: normal;
+      font-size: 0.85rem;
+    }
+    strong {
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>📁 Wallpaper Library</h1>
+  <ul>
+    ${renderTree(tree)}
+  </ul>
+</body>
+</html>
+  `.trim();
+
+  res.type("html").send(html);
+});
+
+
 // Route racine : image aléatoire dans TOUT l'arbre
 app.get('/', (req, res) => serveRandomImage(req, res, ''));
 
